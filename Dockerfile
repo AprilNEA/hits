@@ -1,4 +1,4 @@
-DFROM oven/bun:alpine AS base
+FROM oven/bun:alpine AS base
 
 FROM base AS builder
 
