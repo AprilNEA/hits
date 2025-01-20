@@ -1,0 +1,33 @@
+import { z } from "@hono/zod-openapi";
+import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";
+import Badge from "../components/Badge";
+
+export type Variables = {
+	increment: (url: string) => Promise<number>;
+}
+
+const app = new Hono<{ Variables: Variables }>().get(
+	"/",
+	zValidator(
+		"query",
+		z.object({
+			url: z.string().url(),
+		}).transform((data) => {
+			const url = new URL(data.url.toLowerCase());
+			url.search = '';
+			return {
+				url
+			};
+		}),
+	),
+	async (c) => {
+		const { url } = c.req.valid("query");
+		const count = await c.var.increment(String(url));
+		c.header('Content-Type', 'image/svg+xml');
+		c.header('Cache-Control', 'max-age=0, s-maxage=0, must-revalidate, no-cache, no-store');
+		return c.html(<Badge count={count} />);
+	},
+);
+
+export default app;

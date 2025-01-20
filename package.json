@@ -1,0 +1,24 @@
+{
+  "name": "hits",
+  "type": "module",
+  "scripts": {
+    "dev:workerd": "wrangler dev",
+    "dev:node": "tsx --watch src/server.ts",
+    "build": "tsc",
+    "deploy": "wrangler deploy --minify"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@hono/zod-openapi": "^0.18.3",
+    "@hono/zod-validator": "^0.4.2",
+    "hono": "^4.6.17",
+    "ioredis": "^5.4.2",
+    "unstorage": "^1.14.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "@types/node": "^22.10.7",
+    "typescript": "^5.7.3",
+    "wrangler": "^3.101.0"
+  }
+}
