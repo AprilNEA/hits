@@ -1,12 +1,18 @@
+import { z } from 'zod';
 import type { FC } from 'hono/jsx'
 
-interface BadgeProps {
-  label?: string;
+export const BadgeStyle = z.object({
+  label: z.string(),
+  color: z.string(),
+  leftBgColor: z.string(),
+  rightBgColor: z.string(),
+  border: z.enum(['square', 'rounded']),
+}).partial()
+
+export type BadgeStyle = z.infer<typeof BadgeStyle>;
+
+export interface BadgeProps extends BadgeStyle {
   count: number;
-  color?: string;
-  leftBgColor?: string;
-  rightBgColor?: string;
-  border?: 'square' | 'rounded';
 }
 
 const Badge: FC<BadgeProps> = ({
@@ -23,7 +29,7 @@ const Badge: FC<BadgeProps> = ({
 
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg" 
+      xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
       width={rectWidth}
       height={20}
@@ -33,16 +39,16 @@ const Badge: FC<BadgeProps> = ({
     >
       <title>{`${label}: ${count} hits`}</title>
       <linearGradient id="s" x2="0" y2="100%">
-        <stop offset="0" stopColor="#bbb" stopOpacity=".1"/>
-        <stop offset="1" stopOpacity=".1"/>
+        <stop offset="0" stopColor="#bbb" stopOpacity=".1" />
+        <stop offset="1" stopOpacity=".1" />
       </linearGradient>
       <clipPath id="r">
-        <rect width={100} height={20} rx={borderRadius} fill="#fff"/>
+        <rect width={100} height={20} rx={borderRadius} fill="#fff" />
       </clipPath>
       <g clipPath="url(#r)">
-        <rect width={38} height={20} fill={leftBgColor}/>
-        <rect x={38} width={62} height={20} fill={rightBgColor}/>
-        <rect width={rectWidth} height={20} fill="url(#s)"/>
+        <rect width={38} height={20} fill={leftBgColor} />
+        <rect x={38} width={62} height={20} fill={rightBgColor} />
+        <rect width={rectWidth} height={20} fill="url(#s)" />
       </g>
       <g fill="#fff" textAnchor="middle" fontFamily="Verdana,Geneva,DejaVu Sans,sans-serif" fontSize={110}>
         <text x={195} y={140} transform="scale(.1)" fill={color}>{label}</text>
