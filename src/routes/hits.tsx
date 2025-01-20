@@ -22,9 +22,13 @@ const app = new Hono<{ Variables: Variables }>().get(
 	async (c) => {
 		const { url, ...style } = c.req.valid("query");
 		const count = await c.var.increment(String(url));
+		const response = c.html(<Badge count={count} {...style} />, {
+			headers: {
+				'Cache-Control': 'max-age=0, s-maxage=0, must-revalidate, no-cache, no-store',
+			},
+		});
 		c.header('Content-Type', 'image/svg+xml');
-		c.header('Cache-Control', 'max-age=0, s-maxage=0, must-revalidate, no-cache, no-store');
-		return c.html(<Badge count={count} {...style} />);
+		return response
 	},
 );
 
