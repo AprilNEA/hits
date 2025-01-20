@@ -1,5 +1,7 @@
 # Hits Badge
 
+![Hits](https://hits.aprilnea.com/hits?url=https://github.com/AprilNEA/hits)
+
 一个轻量级的访问计数徽章服务，可以轻松地为你的项目添加访问统计。基于 Cloudflare Workers 构建，使用 Hono 框架开发。
 
 ## 使用方法
@@ -7,7 +9,7 @@
 在你的 README.md 或任何支持 Markdown 的地方添加以下代码：
 
 ```markdown
-![hits](https://your-worker-url.workers.dev/hits?url=https://github.com/your-username/your-repo)
+![hits](https://hits.aprilnea.com/hits?url=https://github.com/AprilNEA)
 ```
 
 将 `your-worker-url.workers.dev` 替换为你部署的 Workers 地址，`url` 参数替换为你想要统计的页面 URL。
@@ -24,7 +26,7 @@
 
 1. 克隆仓库：
 ```bash
-git clone https://github.com/your-username/hits.git
+git clone https://github.com/AprilNEA/hits.git
 cd hits
 ```
 
@@ -56,5 +58,5 @@ MIT
 
 ## 示例
 
-![hits](https://hits.yunyoujun.cn/hits?url=https://github.com/yunyoujun/hits)
+![hits](https://hits.aprilnea.com/hits?url=https://github.com/AprilNEA)
 
