@@ -1,27 +1,16 @@
-FROM oven/bun:alpine AS base
+FROM node:22-alpine AS base
 
-FROM base AS builder
+RUN npm install -g pnpm
 
-RUN apk add --no-cache gcompat
+FROM base AS build
 WORKDIR /app
 
-COPY bun.lockb package*json tsconfig.json src ./
+COPY . .
 
-RUN bun install && \
-    bun run build && \
-    bun install --production
+RUN pnpm install --frozen-lockfile
+RUN pnpm run build
 
-FROM base AS runner
-WORKDIR /app
+EXPOSE 8787
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 hono
+CMD [ "pnpm", "start" ]
 
-COPY --from=builder --chown=hono:nodejs /app/node_modules /app/node_modules
-COPY --from=builder --chown=hono:nodejs /app/dist /app/dist
-COPY --from=builder --chown=hono:nodejs /app/package.json /app/package.json
-
-USER hono
-EXPOSE 3000
-
-CMD ["node", "/app/dist/server.js"]
