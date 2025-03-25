@@ -24,7 +24,7 @@ const Badge: FC<BadgeProps> = ({
   border = 'rounded',
   ...props
 }) => {
-  const rectWidth = 150;
+  const rectWidth = 100;
   const borderRadius = border === 'square' ? 0 : 3;
 
   return (
