@@ -1,33 +1,32 @@
-version: '3.8'
-
 services:
   app:
     build: .
-    expose:
-      - "8787"
-    # ports:
-    #   - "8787:8787"
+    ports:
+      - "127.0.0.1:8787:8787"
     environment:
-      - REDIS_URL=redis://cache:6379
-    restart: always
-    networks:
-      - hits_network
+      REDIS_URL: redis://cache:6379
+      PUBLIC_ORIGIN:
+    depends_on:
+      cache:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
 
   cache:
-    image: redis:latest 
-    environment:
-      - "REDIS_ARGS=--appendonly yes"
-    # ports:
-    #   - "8786:6379"
+    image: redis:8.10.2-alpine3.23
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
     volumes:
       - hits_redis_data:/data
-    restart: always
-    networks:
-      - hits_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
 
 volumes:
   hits_redis_data:
-
-networks:
-  hits_network:
-    driver: bridge

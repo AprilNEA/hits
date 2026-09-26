@@ -1,21 +1,14 @@
-import { DurableObject } from 'cloudflare:workers'
+import { DurableObject } from "cloudflare:workers";
+import { counterValue } from "../lib/count";
 
 export class CloudflareCounter extends DurableObject {
-  async getCounterValue() {
-    const value = (await this.ctx.storage.get('value')) || 0
-    return value
-  }
+	async getCounterValue() {
+		return counterValue(await this.ctx.storage.get<number>("value"));
+	}
 
-  async increment(amount = 1) {
-    const value: number = (Number(await this.ctx.storage.get('value')) || 0) + amount
-    await this.ctx.storage.put('value', value)
-    return value
-  }
-
-  async decrement(amount = 1) {
-    const value: number = (Number(await this.ctx.storage.get('value')) || 0) - amount
-
-    await this.ctx.storage.put('value', value)
-    return value
-  }
+	async increment() {
+		const value = counterValue((await this.getCounterValue()) + 1);
+		await this.ctx.storage.put("value", value);
+		return value;
+	}
 }

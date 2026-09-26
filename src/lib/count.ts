@@ -1,20 +1,46 @@
-import type { Storage } from "unstorage";
+export type CounterId = {
+	url: string;
+	version: "1" | "2";
+};
 
-export default class Counter {
-  constructor(private storage: Storage) { }
+export interface Counter {
+	get(id: CounterId): Promise<number>;
+	increment(id: CounterId): Promise<number>;
+}
 
-  async getCounterValue(key: string) {
-    const count = await this.storage.getItem(key)
-    return count ? Number(count) : 0
-  }
+export function normalizeCounterUrl(
+	input: string,
+	version: CounterId["version"],
+) {
+	const url = new URL(version === "1" ? input.toLowerCase() : input);
+	if (version === "1") {
+		url.search = "";
+	} else {
+		if (
+			!["http:", "https:"].includes(url.protocol) ||
+			url.username ||
+			url.password
+		) {
+			throw new Error("v=2 requires an HTTP(S) URL without credentials");
+		}
+		url.hash = "";
+	}
+	return String(url);
+}
 
-  async setCount(key: string, value: number) {
-    return await this.storage.setItem(key, String(value))
-  }
+export function counterValue(
+	value: string | number | null | undefined,
+): number {
+	const count =
+		typeof value === "string" && /^\d+$/.test(value)
+			? Number(value)
+			: (value ?? 0);
+	if (typeof count !== "number" || !Number.isSafeInteger(count) || count < 0) {
+		throw new Error("Stored counter must be a non-negative safe integer");
+	}
+	return count;
+}
 
-  async increment(key: string) {
-    const value = (await this.getCounterValue(key)) + 1
-    await this.setCount(key, value)
-    return value
-  }
+export function counterObjectName(id: CounterId) {
+	return id.version === "1" ? id.url : `v2|${id.url}`;
 }

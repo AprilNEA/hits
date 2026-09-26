@@ -1,26 +1,29 @@
-import hits, { type Variables } from "./routes/hits";
-import { Hono } from 'hono';
-import { serve } from '@hono/node-server';
-import { counter } from "./storage/redis";
+import { serve } from "@hono/node-server";
+import { Redis } from "ioredis";
+import { createApp } from "./app";
+import { RedisCounter } from "./storage/redis";
 
-const app = new Hono<{ Variables: Variables }>()
+const redisUrl = process.env.REDIS_URL;
+if (!redisUrl) throw new Error("REDIS_URL is not set");
 
-if (!process.env.REDIS_URL) {
-  console.error("REDIS_URL is not set");
-  process.exit(1);
+const redis = new Redis(redisUrl, {
+	lazyConnect: true,
+	enableOfflineQueue: false,
+	maxRetriesPerRequest: 1,
+	autoResendUnfulfilledCommands: false,
+	connectTimeout: 5_000,
+	commandTimeout: 5_000,
+});
+redis.on("error", (error) => console.error("Redis connection error", error));
+await redis.connect();
+
+const app = createApp(new RedisCounter(redis), process.env.PUBLIC_ORIGIN);
+const server = serve({ fetch: app.fetch, hostname: "0.0.0.0", port: 8787 });
+
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+	process.once(signal, () => {
+		server.close(() => {
+			void redis.quit();
+		});
+	});
 }
-
-app.use('/hits', async (c, next) => {
-  c.set("increment", async (url: string) => {
-    return await counter.increment(url);
-  });
-  await next();
-})
-
-app.route("/hits", hits)
-
-serve({
-  fetch: app.fetch,
-  hostname: "0.0.0.0",
-  port: 8787,
-})

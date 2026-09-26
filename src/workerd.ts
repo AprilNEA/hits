@@ -1,23 +1,25 @@
-import hits, { type Variables } from "./routes/hits";
-import { CloudflareCounter } from "./storage/cloudflare";
-import { Hono } from 'hono';
-import { env } from "hono/adapter";
+import { createApp } from "./app";
+import { type CounterId, counterObjectName } from "./lib/count";
+import type { CloudflareCounter } from "./storage/cloudflare";
 
-const app = new Hono<{ Variables: Variables }>()
+type Bindings = {
+	COUNTERS: DurableObjectNamespace<CloudflareCounter>;
+	PUBLIC_ORIGIN?: string;
+};
 
-app.use('/hits', async (c, next) => {
-  // @ts-ignore
-  const { COUNTERS } = env<{ COUNTERS: DurableObjectNamespace<CloudflareCounter> }>(c)
-  const increment = async (url: string) => {
-    const id = COUNTERS.idFromName(String(url));
-    const stub = COUNTERS.get(id);
-    return await stub.increment();
-  }
-  c.set("increment", increment);
-  await next();
-})
+export default {
+	fetch(request, env, ctx) {
+		const object = (id: CounterId) =>
+			env.COUNTERS.get(env.COUNTERS.idFromName(counterObjectName(id)));
+		const app = createApp(
+			{
+				get: (id) => object(id).getCounterValue(),
+				increment: (id) => object(id).increment(),
+			},
+			env.PUBLIC_ORIGIN,
+		);
+		return app.fetch(request, env, ctx);
+	},
+} satisfies ExportedHandler<Bindings>;
 
-app.route("/hits", hits)
-
-export default app;
-export { CloudflareCounter };
+export { CloudflareCounter } from "./storage/cloudflare";

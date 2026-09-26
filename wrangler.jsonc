@@ -1,0 +1,13 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "hits",
+	"main": "src/workerd.ts",
+	"compatibility_date": "2026-09-26",
+	"durable_objects": {
+		"bindings": [{ "name": "COUNTERS", "class_name": "CloudflareCounter" }]
+	},
+	// New deployments only. Existing deployments must retain their namespace and migration history.
+	"exports": {
+		"CloudflareCounter": { "type": "durable-object", "storage": "sqlite" }
+	}
+}

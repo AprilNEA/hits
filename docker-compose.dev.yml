@@ -1,16 +1,17 @@
-version: '3.8'
-
 services:
   cache:
-    container_name: hits-redis
-    image: redis:latest 
-    environment:
-      - "REDIS_ARGS=--appendonly yes"
+    image: redis:8.10.2-alpine3.23
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
     ports:
-      - "8786:6379"
+      - "127.0.0.1:8786:6379"
     volumes:
       - hits_redis_data:/data
-    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
 
 volumes:
   hits_redis_data:
