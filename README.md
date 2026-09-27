@@ -1,57 +1,59 @@
 # Hits Badge
 
-为 GitHub README 和网站提供 SVG 请求计数徽章，支持 Cloudflare Workers + Durable Objects 或 Node.js + Redis。
+English | [简体中文](README.zh-CN.md)
 
-计数表示服务收到的有效徽章 GET 请求数。GitHub 的 [Camo 图片代理与缓存](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-anonymized-urls)可能合并请求；这不是精确的页面 PV 或独立访客 UV，重复请求也会计数。
+SVG request-count badges for GitHub READMEs and websites, powered by Cloudflare Workers + Durable Objects or Node.js + Redis.
 
-## 使用
+The count represents valid badge GET requests received by the service. GitHub's [Camo image proxy and cache](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-anonymized-urls) may combine requests. This is not an exact page-view or unique-visitor count; repeated requests also count.
 
-打开部署后的首页生成徽章、预览并复制 Markdown，或直接使用：
+## Usage
+
+Open your deployment's home page to generate a badge, preview it, and copy the Markdown, or use:
 
 ```markdown
 ![hits](https://hits.aprilnea.com/hits?url=https%3A%2F%2Fgithub.com%2FAprilNEA%2Fhits&v=2)
 ```
 
-自托管时替换服务地址。目标 `url` 必须完整编码，尤其是包含 `?`、`&`、`#` 时；可使用 `URLSearchParams` 生成查询字符串。
+Replace the service address when self-hosting. Encode the entire target `url`, especially when it contains `?`, `&`, or `#`; `URLSearchParams` can build the query string.
 
-| 参数 | 含义 |
+| Parameter | Description |
 | --- | --- |
-| `url` | 要计数的 URL，最长 2048 字符；`v=2` 只接受不含用户名密码的 HTTP(S) URL；不抓取该页面 |
-| `v` | `1`（默认）保留旧计数规则；`2` 使用独立的新计数器 |
-| `label` | 徽章左侧文字，默认 `hits`，最长 64 个 UTF-16 编码单元，不接受控制字符 |
-| `color` | 文字颜色，默认 `#fff` |
-| `leftBgColor` / `rightBgColor` | 左右背景色，默认 `#555` / `#2f3136` |
-| `border` | `rounded`（默认）或 `square` |
-| `format` | `full`（默认）显示完整数字；`compact` 缩写为 `1.2k`、`1M` 等 |
-| `maxUnit` | `auto`（默认）自动选择单位；`k` 最高只用千位，仅在 `format=compact` 时生效 |
-| `preview=true` | 只读当前计数，不增加次数 |
+| `url` | URL to count, up to 2048 characters; `v=2` accepts only HTTP(S) URLs without credentials; the target page is not fetched |
+| `v` | `1` (default) preserves legacy counting rules; `2` uses a separate counter |
+| `label` | Left-hand badge text, default `hits`; up to 64 UTF-16 code units, with no control characters |
+| `color` | Text color, default `#fff` |
+| `leftBgColor` / `rightBgColor` | Left/right background colors, default `#555` / `#2f3136` |
+| `border` | `rounded` (default) or `square` |
+| `format` | `full` (default) displays the full number; `compact` abbreviates it as `1.2k`, `1M`, etc. |
+| `maxUnit` | `auto` (default) selects the unit automatically; `k` caps the unit at thousands; applies only to `format=compact` |
+| `preview=true` | Reads the current count without incrementing it |
 
-`format=compact` 最多保留 1 位小数并四舍五入，例如 `1200` → `1.2k`、`1000000` → `1M`。格式只影响显示，计数数据及 SVG 标题和无障碍说明保留精确值。
+`format=compact` rounds to at most one decimal place, for example `1200` → `1.2k` and `1000000` → `1M`. Formatting affects only the display; stored counts, SVG titles, and accessibility labels retain the exact value.
 
-若希望大数字始终用 `k`，添加 `format=compact&maxUnit=k`：`1000000` → `1000k`、`1234567` → `1234.6k`，不足 `1000` 时仍显示原数。
+To keep large numbers in thousands, add `format=compact&maxUnit=k`: `1000000` → `1000k`, `1234567` → `1234.6k`. Values below `1000` remain unchanged.
 
-颜色支持带 `#` 的 3、4、6、8 位十六进制值和基本 CSS 颜色名，查询字符串中的 `#` 需编码为 `%23`。`HEAD /hits` 和首页预览不增加计数。`GET /healthz` 检查进程存活，不检查存储。无效参数返回 `400`，存储失败返回 `503`，不以 `0` 冒充成功。
+Colors accept 3-, 4-, 6-, or 8-digit hexadecimal values prefixed with `#`, and basic CSS color names. Encode `#` as `%23` in query strings. `HEAD /hits` and home-page previews do not increment the count. `GET /healthz` checks process liveness, not storage health. Invalid parameters return `400`; storage failures return `503` rather than a misleading count of `0`.
 
-### 旧链接与数据
+### Legacy links and data
 
-不带 `v` 的旧链接保持历史行为：URL 转小写、忽略 query、保留 fragment；Redis 还保留旧 key 规范化导致的碰撞。已有计数不会清零，但这些历史规则也无法区分部分页面。
+Links without `v` retain the historical behavior: URLs are lowercased, queries are ignored, and fragments are preserved. Redis also retains collisions caused by legacy key normalization. Existing counts are preserved, but these rules cannot distinguish some pages.
 
-新链接推荐 `v=2`：按标准 URL 解析，保留路径大小写、query 顺序与值，去掉 fragment；不同样式共享同一计数。`v=2` 从零开始，不自动复制或合并 `v=1` 数据，避免将历史碰撞产生的总数重复分配。两种部署后端的数据各自独立。
+Use `v=2` for new links: standard URL parsing preserves path case and query order and values, while removing fragments. Different badge styles share the same counter. `v=2` starts from zero and does not automatically copy or merge `v=1` data, avoiding duplicate allocation of totals caused by historical collisions. The two deployment backends store their data independently.
 
-计数数据默认长期保留。应用不记录访客 IP、Cookie 或访客画像；URL 及计数会进入存储，服务商和反向代理可能保留请求日志。不要在 URL 中包含令牌或个人信息。公开服务仍需在入口配置限流和告警。
+Counts are retained indefinitely by default. The application does not record visitor IPs, cookies, or visitor profiles. URLs and counts are stored, and hosting providers or reverse proxies may retain request logs. Do not include tokens or personal information in URLs. Public deployments still need rate limiting and alerts at the ingress.
 
-## 本地开发与检查
+## Local development and checks
 
-需要 Node.js 24、pnpm 10.33.4：
+Requires Node.js 24 and pnpm 10.33.4:
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-`pnpm dev` 使用本地 Workers + Durable Objects，访问终端输出的地址；不需要 Cloudflare 登录。
+`pnpm dev` runs local Workers + Durable Objects. Open the address printed in the terminal; no Cloudflare login is required.
 
-使用 Node.js + Redis 时需要运行中的 Docker Compose。**已有 Redis 卷必须先按[升级指南](docs/deployment.md#升级已有-redis-数据卷)完成 RDB → AOF 迁移，再执行启动命令：**
+Node.js + Redis requires a running Docker service with Compose. **For an existing Redis volume, complete the RDB → AOF migration in the [upgrade guide (Chinese)](docs/deployment.md#升级已有-redis-数据卷) before running the startup commands:**
 
 ```bash
 docker compose -f docker-compose.dev.yml up -d --wait
@@ -59,7 +61,7 @@ cp .env.example .env
 pnpm dev:node
 ```
 
-首页地址为 `http://localhost:8787`，Redis 仅绑定 `127.0.0.1:8786`。
+The home page is at `http://localhost:8787`. Redis binds only to `127.0.0.1:8786`.
 
 ```bash
 pnpm check
@@ -67,10 +69,10 @@ pnpm check:worker
 TEST_REDIS_URL=redis://127.0.0.1:8786 pnpm test:redis
 ```
 
-`check` 执行格式、lint、类型、单元测试和 Node.js 构建；`check:worker` 只打包，不发布；`test:redis` 验证真实 Redis 并发和旧数据兼容。
+`check` runs formatting checks, linting, type checking, unit tests, and the Node.js build. `check:worker` bundles without deploying. `test:redis` verifies concurrency and legacy data compatibility against real Redis.
 
-部署、反向代理、旧版本升级及备份恢复见[运维指南](docs/deployment.md)。
+See the [operations guide (Chinese)](docs/deployment.md) for deployment, reverse proxies, upgrades, and backup and recovery.
 
-## 许可证
+## License
 
 MIT
