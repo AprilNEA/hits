@@ -3,8 +3,9 @@
 	"type": "module",
 	"scripts": {
 		"dev:workerd": "wrangler dev",
-		"dev:node": "tsx --env-file-if-exists=.env --watch src/server.ts",
+		"dev:node": "tsx esbuild.config.ts --dev-node",
 		"build": "tsx esbuild.config.ts",
+		"build:client": "tsx esbuild.config.ts --client-only",
 		"start": "node dist/server.mjs",
 		"deploy": "wrangler deploy --minify",
 		"dev": "wrangler dev",
@@ -17,15 +18,20 @@
 		"check:worker": "wrangler deploy --dry-run"
 	},
 	"dependencies": {
+		"@base-ui/react": "^1.8.0",
 		"@hono/node-server": "^2.1.1",
 		"hono": "^4.13.9",
 		"ioredis": "^6.0.0",
+		"react": "^19.3.0",
+		"react-dom": "^19.3.0",
 		"zod": "^4.6.5"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.14",
 		"@cloudflare/workers-types": "^5.20260926.1",
 		"@types/node": "^24.19.0",
+		"@types/react": "^19.3.0",
+		"@types/react-dom": "^19.3.0",
 		"esbuild": "^0.28.2",
 		"tsx": "^4.23.15",
 		"typescript": "^7.0.2",

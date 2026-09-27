@@ -21,6 +21,7 @@ export const BadgeStyle = z.object({
 	leftBgColor: color.optional(),
 	rightBgColor: color.optional(),
 	border: z.enum(["square", "rounded"]).optional(),
+	format: z.enum(["full", "compact"]).optional(),
 });
 
 export type BadgeStyle = z.infer<typeof BadgeStyle>;
@@ -29,6 +30,11 @@ interface BadgeProps extends BadgeStyle {
 	count: number;
 }
 
+const compactCount = new Intl.NumberFormat("en", {
+	notation: "compact",
+	maximumFractionDigits: 1,
+});
+
 const Badge: FC<BadgeProps> = ({
 	label = "hits",
 	count,
@@ -36,13 +42,18 @@ const Badge: FC<BadgeProps> = ({
 	leftBgColor = "#555",
 	rightBgColor = "#2f3136",
 	border = "rounded",
+	format = "full",
 }) => {
+	const displayCount =
+		format === "compact"
+			? compactCount.format(count).replace("K", "k")
+			: String(count);
 	// ponytail: approximate font metrics; textLength fits the glyphs. Measure fonts if exact typography is needed.
 	const labelWidth = [...label].reduce(
 		(width, character) => width + (character.charCodeAt(0) < 128 ? 7 : 11),
 		0,
 	);
-	const countWidth = String(count).length * 7;
+	const countWidth = displayCount.length * 7;
 	const leftWidth = labelWidth + 14;
 	const rightWidth = countWidth + 14;
 	const width = leftWidth + rightWidth;
@@ -95,7 +106,7 @@ const Badge: FC<BadgeProps> = ({
 					textLength={countWidth}
 					lengthAdjust="spacingAndGlyphs"
 				>
-					{count}
+					{displayCount}
 				</text>
 			</g>
 		</svg>

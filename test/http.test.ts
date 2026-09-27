@@ -88,6 +88,7 @@ test("invalid inputs are rejected before accessing the counter", async () => {
 		{ leftBgColor: 'red" onload="alert(1)' },
 		{ rightBgColor: "#ff" },
 		{ border: "circle" },
+		{ format: "scientific" },
 	];
 	for (const params of invalid) {
 		const response = await app.request(
@@ -117,6 +118,42 @@ test("SVG escapes labels and fits Unicode labels and large counts", async () => 
 	assert.match(svg, /clip-path="url\(#r\)"/);
 });
 
+test("compact counts round for display while preserving exact values and read-only previews", async () => {
+	for (const [count, compact, compactWidth] of [
+		[0, "0", 63],
+		[999, "999", 77],
+		[1000, "1k", 70],
+		[1200, "1.2k", 84],
+		[999949, "999.9k", 98],
+		[999950, "1M", 70],
+		[1000000, "1M", 70],
+	] as const) {
+		const { counter, calls } = memoryCounter(count);
+		const app = createApp(counter);
+		const params = { url: "https://example.com", preview: "true" };
+		for (const format of ["compact", "full", undefined]) {
+			const response = await app.request(
+				path(format ? { ...params, format } : params),
+			);
+			assert.equal(response.status, 200);
+			const svg = await response.text();
+			const texts = [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)];
+			assert.equal(
+				texts.at(-1)?.[1],
+				format === "compact" ? compact : String(count),
+			);
+			assert.ok(svg.includes(`<title>hits: ${count}</title>`));
+			assert.ok(svg.includes(`aria-label="hits: ${count}"`));
+			const width = Number(svg.match(/<svg[^>]* width="(\d+)"/)?.[1]);
+			if (format === "compact") assert.equal(width, compactWidth);
+		}
+		assert.deepEqual(
+			calls.map(({ method }) => method),
+			["get", "get", "get"],
+		);
+	}
+});
+
 test("storage errors are visible as 503 instead of a successful zero", async (t) => {
 	t.mock.method(console, "error", () => {});
 	const unavailable = async () => {
@@ -140,7 +177,7 @@ test("homepage generates encoded Markdown and a preview without incrementing", a
 	assert.equal((await app.request("/")).status, 200);
 	const url = "https://example.com/Page?first=one&second=two";
 	const response = await app.request(
-		`/?${new URLSearchParams({ url, label: "访问" })}`,
+		`/?${new URLSearchParams({ url, label: "访问", format: "compact" })}`,
 	);
 	assert.equal(response.status, 200);
 	const html = await response.text();
@@ -153,6 +190,7 @@ test("homepage generates encoded Markdown and a preview without incrementing", a
 	assert.equal(badge.searchParams.get("v"), "2");
 	assert.equal(badge.searchParams.get("preview"), null);
 	assert.equal(badge.searchParams.get("label"), "访问");
+	assert.equal(badge.searchParams.get("format"), "compact");
 	assert.deepEqual(calls, []);
 	const preview = html.match(/<img[^>]*src="([^"]+)"/)?.[1];
 	assert.ok(preview);
@@ -169,6 +207,24 @@ test("homepage generates encoded Markdown and a preview without incrementing", a
 	);
 	assert.equal(invalid.status, 400);
 	assert.doesNotMatch(await invalid.text(), /<img/);
+});
+
+test("React bootstrap data preserves values without allowing script injection", async () => {
+	const { counter } = memoryCounter();
+	const label = '</script><script>alert("x")</script>';
+	const response = await createApp(counter).request(
+		`/?${new URLSearchParams({ url: "https://example.com", label })}`,
+	);
+	assert.equal(response.status, 200);
+	const html = await response.text();
+	assert.doesNotMatch(html, /<script>alert/);
+	const data = html.match(
+		/<script id="app-data" type="application\/json">([^<]+)<\/script>/,
+	)?.[1];
+	assert.ok(data);
+	assert.equal(JSON.parse(data).values.label, label);
+	assert.match(html, /<script type="module" src="\/assets\/app.js"><\/script>/);
+	assert.match(html, /href="\/assets\/app.css"/);
 });
 
 test("configured public origin generates HTTPS links behind an HTTP reverse proxy", async () => {

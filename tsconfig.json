@@ -6,7 +6,7 @@
 		"strict": true,
 		"skipLibCheck": true,
 		"verbatimModuleSyntax": true,
-		"lib": ["ESNext"],
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"types": ["@cloudflare/workers-types", "node"],
 		"jsx": "react-jsx",
 		"jsxImportSource": "hono/jsx",

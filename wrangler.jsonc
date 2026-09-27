@@ -3,6 +3,11 @@
 	"name": "hits",
 	"main": "src/workerd.ts",
 	"compatibility_date": "2026-09-26",
+	"build": {
+		"command": "pnpm build:client",
+		"watch_dir": ["src/ui", "esbuild.config.ts"]
+	},
+	"assets": { "directory": "./dist/public" },
 	"durable_objects": {
 		"bindings": [{ "name": "COUNTERS", "class_name": "CloudflareCounter" }]
 	},
