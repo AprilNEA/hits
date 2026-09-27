@@ -24,7 +24,7 @@ pnpm deploy
 
 **升级已有 Worker 时，先恢复原部署配置。** 保留原 Worker 名称、`COUNTERS` 绑定、`CloudflareCounter` 类名、命名空间和完整 `migrations` 历史；不要将本仓库的新部署 `exports` 直接覆盖到旧配置。已有 KV namespace 不能直接改为 SQLite。原 `wrangler.toml` 未被纳入版本控制，可显式使用 `pnpm exec wrangler deploy --config wrangler.toml`。[Cloudflare 部署与存储说明](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/)
 
-首页使用 React + Base UI，由服务端渲染并在浏览器中激活交互。旧 Wrangler 配置还需添加 `build.command = "pnpm build:client"` 和 `assets.directory = "./dist/public"`，以构建和部署页面的 JavaScript、CSS；开发时可将 `build.watch_dir` 设为 `["src/ui", "esbuild.config.ts"]`。
+首页使用 React + shadcn/ui（Base UI），由服务端渲染并在浏览器中激活交互；Tailwind CSS 随客户端一起构建。旧 Wrangler 配置还需添加 `build.command = "pnpm build:client"` 和 `assets.directory = "./dist/public"`，以构建和部署页面的 JavaScript、CSS；开发时可将 `build.watch_dir` 设为 `["src/ui", "esbuild.config.ts"]`。
 
 ## Docker + Redis
 

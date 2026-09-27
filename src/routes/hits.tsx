@@ -1,3 +1,4 @@
+/** @jsxImportSource hono/jsx */
 import { Hono } from "hono";
 import { z } from "zod";
 import Badge, { BadgeStyle } from "../components/Badge";

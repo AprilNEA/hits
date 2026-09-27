@@ -9,7 +9,8 @@
 		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"types": ["@cloudflare/workers-types", "node"],
 		"jsx": "react-jsx",
-		"jsxImportSource": "hono/jsx",
+		"jsxImportSource": "react",
+		"paths": { "@/*": ["./src/*"] },
 		"noEmit": true
 	},
 	"exclude": ["node_modules", "dist"]
