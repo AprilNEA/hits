@@ -16,6 +16,10 @@ const formats = [
 	{ value: "full", label: "完整数字 · 1200" },
 	{ value: "compact", label: "紧凑格式 · 1.2k" },
 ];
+const maxUnits = [
+	{ value: "auto", label: "自动 · 1M" },
+	{ value: "k", label: "只用 k · 1000k" },
+];
 const borders = [
 	{ value: "rounded", label: "圆角" },
 	{ value: "square", label: "直角" },
@@ -148,6 +152,12 @@ export function App({ values, badgeUrl, previewUrl, error }: AppProps) {
 							value={values.format === "compact" ? "compact" : "full"}
 							items={formats}
 						/>
+						<Choice
+							name="maxUnit"
+							label="最高单位（紧凑格式）"
+							value={values.maxUnit === "k" ? "k" : "auto"}
+							items={maxUnits}
+						/>
 						<div className="colors">
 							{colors.map(({ name, label, defaultValue }) => (
 								<Field.Root className="field" key={name}>
@@ -226,7 +236,8 @@ export function App({ values, badgeUrl, previewUrl, error }: AppProps) {
 						<div className="format-note">
 							<span>紧凑格式</span>
 							<code>1200 → 1.2k</code>
-							<code>1000000 → 1M</code>
+							<code>自动：1000000 → 1M</code>
+							<code>只用 k：1000000 → 1000k</code>
 						</div>
 					</section>
 				</div>

@@ -89,6 +89,7 @@ test("invalid inputs are rejected before accessing the counter", async () => {
 		{ rightBgColor: "#ff" },
 		{ border: "circle" },
 		{ format: "scientific" },
+		{ maxUnit: "M" },
 	];
 	for (const params of invalid) {
 		const response = await app.request(
@@ -154,6 +155,38 @@ test("compact counts round for display while preserving exact values and read-on
 	}
 });
 
+test("maxUnit=k retains thousands while full and automatic formats keep their behavior", async () => {
+	for (const [count, format, maxUnit, display, width] of [
+		[0, "compact", "k", "0", 63],
+		[999, "compact", "k", "999", 77],
+		[1000, "compact", "k", "1k", 70],
+		[999949, "compact", "k", "999.9k", 98],
+		[999950, "compact", "k", "1000k", 91],
+		[1000000, "compact", "k", "1000k", 91],
+		[1234567, "compact", "k", "1234.6k", 105],
+		[1000000, "compact", "auto", "1M", 70],
+		[1000000, "full", "k", "1000000", 105],
+	] as const) {
+		const { counter, calls } = memoryCounter(count);
+		const response = await createApp(counter).request(
+			path({ url: "https://example.com", preview: "true", format, maxUnit }),
+		);
+		assert.equal(response.status, 200);
+		const svg = await response.text();
+		assert.equal(
+			[...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].at(-1)?.[1],
+			display,
+		);
+		assert.ok(svg.includes(`<title>hits: ${count}</title>`));
+		assert.ok(svg.includes(`aria-label="hits: ${count}"`));
+		assert.equal(Number(svg.match(/<svg[^>]* width="(\d+)"/)?.[1]), width);
+		assert.deepEqual(
+			calls.map(({ method }) => method),
+			["get"],
+		);
+	}
+});
+
 test("storage errors are visible as 503 instead of a successful zero", async (t) => {
 	t.mock.method(console, "error", () => {});
 	const unavailable = async () => {
@@ -177,7 +210,7 @@ test("homepage generates encoded Markdown and a preview without incrementing", a
 	assert.equal((await app.request("/")).status, 200);
 	const url = "https://example.com/Page?first=one&second=two";
 	const response = await app.request(
-		`/?${new URLSearchParams({ url, label: "访问", format: "compact" })}`,
+		`/?${new URLSearchParams({ url, label: "访问", format: "compact", maxUnit: "k" })}`,
 	);
 	assert.equal(response.status, 200);
 	const html = await response.text();
@@ -191,11 +224,18 @@ test("homepage generates encoded Markdown and a preview without incrementing", a
 	assert.equal(badge.searchParams.get("preview"), null);
 	assert.equal(badge.searchParams.get("label"), "访问");
 	assert.equal(badge.searchParams.get("format"), "compact");
+	assert.equal(badge.searchParams.get("maxUnit"), "k");
+	const unitInput = html.match(/<input\b[^>]*name="maxUnit"[^>]*>/)?.[0];
+	assert.ok(unitInput);
+	assert.match(unitInput, /value="k"/);
+	assert.match(unitInput, /aria-hidden="true"/);
 	assert.deepEqual(calls, []);
 	const preview = html.match(/<img[^>]*src="([^"]+)"/)?.[1];
 	assert.ok(preview);
 	const image = new URL(preview.replaceAll("&amp;", "&"));
 	assert.equal(image.searchParams.get("preview"), "true");
+	assert.equal(image.searchParams.get("format"), "compact");
+	assert.equal(image.searchParams.get("maxUnit"), "k");
 	assert.equal((await app.request(image.href)).status, 200);
 	assert.deepEqual(
 		calls.map(({ method }) => method),

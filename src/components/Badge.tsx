@@ -22,6 +22,7 @@ export const BadgeStyle = z.object({
 	rightBgColor: color.optional(),
 	border: z.enum(["square", "rounded"]).optional(),
 	format: z.enum(["full", "compact"]).optional(),
+	maxUnit: z.enum(["auto", "k"]).optional(),
 });
 
 export type BadgeStyle = z.infer<typeof BadgeStyle>;
@@ -34,6 +35,10 @@ const compactCount = new Intl.NumberFormat("en", {
 	notation: "compact",
 	maximumFractionDigits: 1,
 });
+const thousandsCount = new Intl.NumberFormat("en", {
+	useGrouping: false,
+	maximumFractionDigits: 1,
+});
 
 const Badge: FC<BadgeProps> = ({
 	label = "hits",
@@ -43,11 +48,15 @@ const Badge: FC<BadgeProps> = ({
 	rightBgColor = "#2f3136",
 	border = "rounded",
 	format = "full",
+	maxUnit = "auto",
 }) => {
-	const displayCount =
-		format === "compact"
-			? compactCount.format(count).replace("K", "k")
-			: String(count);
+	let displayCount = String(count);
+	if (format === "compact") {
+		displayCount =
+			maxUnit === "k" && count >= 1000
+				? `${thousandsCount.format(count / 1000)}k`
+				: compactCount.format(count).replace("K", "k");
+	}
 	// ponytail: approximate font metrics; textLength fits the glyphs. Measure fonts if exact typography is needed.
 	const labelWidth = [...label].reduce(
 		(width, character) => width + (character.charCodeAt(0) < 128 ? 7 : 11),
